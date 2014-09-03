@@ -56,7 +56,7 @@ func (p *peers) list() []string {
 
 func (p *peers) purge(t time.Time) {
 	for addr, last := range p.seen {
-		if t.Sub(last) >= timeout {
+		if t.Sub(last) >= purgeAfter {
 			log.Println("purging dead peer", addr, "last seen", last.String())
 			delete(p.seen, addr)
 		}
