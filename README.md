@@ -1,3 +1,3 @@
-a simple centralized peer list
+a simple centralized peer list for groupcache
 
-alpha level code
+super alpha level code, don't use this

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	purgeAfter = time.Minute * 2
+	purgeAfter = 1 * time.Minute
 )
 
 type peers struct {

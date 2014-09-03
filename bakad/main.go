@@ -15,19 +15,30 @@ func main() {
 
 	peerlist = newPeers()
 
-	http.HandleFunc("/", test)
-	http.HandleFunc("/announce", announce)
+	http.HandleFunc("/peers", peersHandler)
+	http.HandleFunc("/announce", announceHandler)
 
 	log.Println("starting bakad:", *bind)
 	http.ListenAndServe(*bind, nil)
 }
 
-func announce(w http.ResponseWriter, r *http.Request) {
-	peerlist.announce <- r.RemoteAddr
-	w.Write([]byte("ok"))
+func announceHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "bad method", 400)
+		return
+	}
+	url := r.FormValue("url")
+	if url == "" {
+		log.Println("blank url from", r.RemoteAddr)
+		http.Error(w, "no url", 400)
+		return
+	}
+	peerlist.announce <- url
+	//w.Write([]byte("ok"))
+	peersHandler(w, r)
 }
 
-func test(w http.ResponseWriter, r *http.Request) {
+func peersHandler(w http.ResponseWriter, r *http.Request) {
 	recv := make(chan []string)
 	peerlist.req <- recv
 	list := <-recv
