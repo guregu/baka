@@ -5,15 +5,22 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 )
 
 var bind = flag.String("bind", ":1337", "bind address")
+var timeout = flag.String("timeout", "1m", "dead peer timeout")
 var peerlist *peers
 
 func main() {
 	flag.Parse()
 
-	peerlist = newPeers()
+	purgeTime, err := time.ParseDuration(*timeout)
+	if err != nil {
+		panic(err)
+	}
+
+	peerlist = newPeers(purgeTime)
 
 	http.HandleFunc("/peers", peersHandler)
 	http.HandleFunc("/announce", announceHandler)

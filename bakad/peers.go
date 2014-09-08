@@ -10,16 +10,18 @@ const (
 )
 
 type peers struct {
-	seen map[string]time.Time
+	seen    map[string]time.Time
+	timeout time.Duration
 
 	announce chan string
 	req      chan chan []string
 	ticker   <-chan time.Time
 }
 
-func newPeers() *peers {
+func newPeers(timeout time.Duration) *peers {
 	p := &peers{
-		seen: make(map[string]time.Time),
+		seen:    make(map[string]time.Time),
+		timeout: timeout,
 
 		announce: make(chan string),
 		req:      make(chan chan []string),
@@ -56,7 +58,7 @@ func (p *peers) list() []string {
 
 func (p *peers) purge(t time.Time) {
 	for addr, last := range p.seen {
-		if t.Sub(last) >= purgeAfter {
+		if t.Sub(last) >= p.timeout {
 			log.Println("purging dead peer", addr, "last seen", last.String())
 			delete(p.seen, addr)
 		}
