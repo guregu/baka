@@ -15,7 +15,7 @@ import 	"github.com/guregu/baka"
 var peers *groupcache.HTTPPool
 
 func main() {
-	// e.x. bakad is at 10.0.0.1:1337 and this server is at 10.0.0.42:7000
+	// ex. bakad is at 10.0.0.1:1337 and this server is at 10.0.0.42:7000
 	server := "http://10.0.0.1:1337"
 	self := "http://10.0.0.42:7000"
 	peers = groupcache.NewHTTPPool(self)
