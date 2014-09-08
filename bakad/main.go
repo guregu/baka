@@ -20,13 +20,17 @@ func main() {
 		panic(err)
 	}
 
+	setup(purgeTime)
+
+	log.Println("starting bakad:", *bind)
+	http.ListenAndServe(*bind, nil)
+}
+
+func setup(purgeTime time.Duration) {
 	peerlist = newPeers(purgeTime)
 
 	http.HandleFunc("/peers", peersHandler)
 	http.HandleFunc("/announce", announceHandler)
-
-	log.Println("starting bakad:", *bind)
-	http.ListenAndServe(*bind, nil)
 }
 
 func announceHandler(w http.ResponseWriter, r *http.Request) {

@@ -12,10 +12,14 @@ Timeout specifies how long to wait before a peer is considered dead and removed 
 ```go
 import 	"github.com/guregu/baka"
 
-func InitCache(server, self string) {
-	peers := groupcache.NewHTTPPool(self)
-	// update the peer list every 10 seconds
+var peers *groupcache.HTTPPool
+
+func main() {
+	// e.x. bakad is at 10.0.0.1:1337 and this server is at 10.0.0.42:7000
+	server := "http://10.0.0.1:1337"
+	self := "http://10.0.0.42:7000"
+	peers = groupcache.NewHTTPPool(self)
+	// refresh peers list every 10 seconds
 	baka.Update(server, self, peers, time.Second*10)
 }
 ```
-`server` and `self` should be full URLs with port numbers. 

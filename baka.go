@@ -44,6 +44,7 @@ func (b *Baka) update() {
 	b.pool.Set(peers...)
 }
 
+// Update starts listening for updates to the peer list. Server and self should be URLs.
 func Update(server, self string, pool *groupcache.HTTPPool, announceRate time.Duration) {
 	b := &Baka{
 		server: server,
