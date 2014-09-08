@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-const (
-	purgeAfter = 1 * time.Minute
-)
-
 type peers struct {
 	seen    map[string]time.Time
 	timeout time.Duration
