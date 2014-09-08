@@ -1,4 +1,4 @@
-a simple centralized peer list for groupcache
+a stupidly simple centralized peer list for groupcache
 
 ## Usage
 ### Server
