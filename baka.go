@@ -40,7 +40,7 @@ func (b *Baka) update() {
 		log.Println("baka error", err)
 		return
 	}
-	log.Println("got peers", peers)
+	// log.Println("got peers", peers)
 	b.pool.Set(peers...)
 }
 
