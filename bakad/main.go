@@ -6,34 +6,42 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 var bind = flag.String("bind", ":1337", "bind address")
 var timeout = flag.String("timeout", "1m", "dead peer timeout")
-var peerlist *peers
+var purgeTime time.Duration
 
 func main() {
 	flag.Parse()
 
-	purgeTime, err := time.ParseDuration(*timeout)
+	var err error
+	purgeTime, err = time.ParseDuration(*timeout)
 	if err != nil {
 		panic(err)
 	}
 
-	setup(purgeTime)
-
-	log.Println("starting bakad:", *bind)
-	http.ListenAndServe(*bind, nil)
+	setup()
 }
 
-func setup(purgeTime time.Duration) {
-	peerlist = newPeers(purgeTime)
+func setup() {
+	router := httprouter.New()
+	router.GET("/:group/peers", peersHandler)
+	router.POST("/:group/announce", announceHandler)
 
-	http.HandleFunc("/peers", peersHandler)
-	http.HandleFunc("/announce", announceHandler)
+	log.Fatal(http.ListenAndServe(*bind, router))
 }
 
-func announceHandler(w http.ResponseWriter, r *http.Request) {
+func announceHandler(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	group := params.ByName("group")
+	if group == "" {
+		http.Error(w, "no group", 400)
+		return
+	}
+	peerlist := getPeers(group)
+
 	if r.Method != "POST" {
 		http.Error(w, "bad method", 400)
 		return
@@ -45,11 +53,17 @@ func announceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	peerlist.announce <- url
-	//w.Write([]byte("ok"))
-	peersHandler(w, r)
+	peersHandler(w, r, params)
 }
 
-func peersHandler(w http.ResponseWriter, r *http.Request) {
+func peersHandler(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	group := params.ByName("group")
+	if group == "" {
+		http.Error(w, "no group", 400)
+		return
+	}
+	peerlist := getPeers(group)
+
 	recv := make(chan []string)
 	peerlist.req <- recv
 	list := <-recv

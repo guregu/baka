@@ -2,10 +2,17 @@ package main
 
 import (
 	"log"
+	"sync"
 	"time"
 )
 
+var peerGroups = struct {
+	m map[string]*peers
+	sync.RWMutex
+}{m: make(map[string]*peers)}
+
 type peers struct {
+	group   string
 	seen    map[string]time.Time
 	timeout time.Duration
 
@@ -14,8 +21,25 @@ type peers struct {
 	ticker   <-chan time.Time
 }
 
-func newPeers(timeout time.Duration) *peers {
+// get / make peers group
+func getPeers(group string) *peers {
+	peerGroups.RLock()
+	if p, ok := peerGroups.m[group]; ok {
+		peerGroups.RUnlock()
+		return p
+	}
+	peerGroups.RUnlock()
+
+	peerGroups.Lock()
+	p := newPeers(group, purgeTime)
+	peerGroups.m[group] = p
+	peerGroups.Unlock()
+	return p
+}
+
+func newPeers(group string, timeout time.Duration) *peers {
 	p := &peers{
+		group:   group,
 		seen:    make(map[string]time.Time),
 		timeout: timeout,
 
@@ -28,6 +52,7 @@ func newPeers(timeout time.Duration) *peers {
 }
 
 func (p *peers) run() {
+	defer p.die()
 	for {
 		select {
 		case addr := <-p.announce:
@@ -35,11 +60,13 @@ func (p *peers) run() {
 			p.seen[addr] = time.Now()
 		case req := <-p.req:
 			seen := p.list()
-			go func() {
-				req <- seen
-			}()
+			req <- seen
 		case now := <-p.ticker:
 			p.purge(now)
+			if len(p.seen) == 0 {
+				// die
+				return
+			}
 		}
 	}
 }
@@ -59,4 +86,11 @@ func (p *peers) purge(t time.Time) {
 			delete(p.seen, addr)
 		}
 	}
+}
+
+// cleanup
+func (p *peers) die() {
+	peerGroups.Lock()
+	delete(peerGroups.m, p.group)
+	peerGroups.Unlock()
 }

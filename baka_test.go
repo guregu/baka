@@ -15,6 +15,13 @@ func TestBaka(t *testing.T) {
 	self := fmt.Sprintf("http://localhost:%d", port)
 	server := "http://localhost:1337"
 	pool := groupcache.NewHTTPPool(self)
-	Update(server, self, pool, time.Second*10)
+	b := Baka{
+		Server: server,
+		Self:   self,
+		Pool:   pool,
+		Group:  "test",
+		Rate:   time.Second * 10,
+	}
+	b.Run()
 	time.Sleep(time.Minute)
 }

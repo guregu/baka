@@ -2,6 +2,7 @@ package baka
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,11 +12,24 @@ import (
 )
 
 type Baka struct {
-	server string
-	self   string
-	pool   *groupcache.HTTPPool
+	Server string
+	Self   string
+	Group  string
+	Pool   *groupcache.HTTPPool
+	Rate   time.Duration
 
 	ticker <-chan time.Time
+}
+
+func (b *Baka) Run() {
+	if b.Server == "" || b.Self == "" ||
+		b.Pool == nil || b.Rate == 0 {
+		panic("baka: missing params")
+	}
+
+	b.ticker = time.Tick(b.Rate)
+	b.update()
+	go b.run()
 }
 
 func (b *Baka) run() {
@@ -28,8 +42,9 @@ func (b *Baka) run() {
 }
 
 func (b *Baka) update() {
-	resp, err := http.PostForm(b.server+"/announce",
-		url.Values{"url": {b.self}})
+	api := fmt.Sprintf("%s/%s/announce", b.Server, b.Group)
+	log.Println("URL", api)
+	resp, err := http.PostForm(api, url.Values{"url": {b.Self}})
 	if err != nil {
 		log.Println("baka error", err)
 		return
@@ -41,18 +56,5 @@ func (b *Baka) update() {
 		return
 	}
 	// log.Println("got peers", peers)
-	b.pool.Set(peers...)
-}
-
-// Update starts listening for updates to the peer list. Server and self should be URLs.
-func Update(server, self string, pool *groupcache.HTTPPool, announceRate time.Duration) {
-	b := &Baka{
-		server: server,
-		self:   self,
-		pool:   pool,
-
-		ticker: time.Tick(announceRate),
-	}
-	b.update()
-	go b.run()
+	b.Pool.Set(peers...)
 }
